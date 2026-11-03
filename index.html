@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090b0a">
+  <meta name="description" content="Football Stats: medidor de fuerza de remate y estadísticas en vivo.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <title>Football Stats</title>
+  <style>
+    :root { color-scheme: dark; --bg:#080a09; --panel:#121513; --line:#292e2b; --muted:#9aa49d; --white:#f5f7f5; --green:#9be34e; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--white); font-family:Arial,Helvetica,sans-serif; min-height:100vh; }
+    .wrap { width:min(1100px, calc(100% - 32px)); margin:0 auto; padding:env(safe-area-inset-top) 0 calc(28px + env(safe-area-inset-bottom)); }
+    header { min-height:94px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-bottom:1px solid var(--line); padding:14px 0; }
+    .brand { display:flex; align-items:center; gap:13px; min-width:0; }
+    .brand img { width:66px; height:66px; object-fit:contain; border-radius:12px; background:#e1f0fa; }
+    h1 { margin:0; font-size:clamp(22px,4vw,32px); letter-spacing:3px; }
+    .subtitle { color:var(--muted); letter-spacing:2px; font-size:12px; margin-top:6px; }
+    .connection { color:var(--muted); font-size:13px; white-space:nowrap; display:flex; align-items:center; gap:8px; }
+    .dot { width:9px; height:9px; border-radius:50%; background:#d5a33a; display:inline-block; }
+    .dot.online { background:#62d98d; } .dot.offline { background:#e06b6b; }
+    .hero { margin-top:24px; padding:28px clamp(20px,4vw,40px); background:var(--panel); border:1px solid var(--line); border-radius:22px; }
+    .eyebrow { color:var(--muted); letter-spacing:2px; font-size:13px; text-transform:uppercase; }
+    .live-row { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:24px 0 12px; }
+    .live { font-size:clamp(76px,17vw,132px); line-height:1; font-weight:800; letter-spacing:-5px; font-variant-numeric:tabular-nums; }
+    .unit { color:var(--muted); font-size:20px; font-weight:bold; }
+    .status { display:inline-flex; align-items:center; border:1px solid #414842; border-radius:30px; padding:9px 17px; font-size:13px; margin:10px 0 18px; }
+    .meter { height:7px; background:#292e2b; border-radius:10px; overflow:hidden; }
+    .meter > span { display:block; height:100%; width:0%; background:var(--green); transition:width .2s ease; }
+    .hint { color:var(--muted); font-size:12px; margin:12px 0 0; line-height:1.5; }
+    .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:16px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:22px; min-height:138px; }
+    .value { font-size:clamp(32px,6vw,48px); font-weight:800; margin-top:24px; font-variant-numeric:tabular-nums; }
+    .value small { color:var(--muted); font-size:14px; font-weight:normal; }
+    .history { margin-top:16px; background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:22px; }
+    .history-list { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-top:15px; }
+    .shot { border:1px solid var(--line); border-radius:12px; padding:12px 8px; text-align:center; }
+    .shot b { display:block; font-size:18px; } .shot span { color:var(--muted); font-size:11px; }
+    .empty { color:var(--muted); font-size:13px; padding:12px 0; }
+    .footer { color:#68716b; font-size:11px; text-align:center; padding:22px 0 0; }
+    .install { display:none; border:0; border-radius:30px; background:var(--green); color:#14200c; padding:11px 16px; font-weight:bold; cursor:pointer; }
+    .install.show { display:inline-block; }
+    @media (max-width:700px) {
+      .wrap { width:min(100% - 22px, 560px); }
+      header { align-items:flex-start; flex-direction:column; }
+      .connection { align-self:flex-end; }
+      .cards { grid-template-columns:1fr; gap:10px; }
+      .card { min-height:112px; padding:18px; }
+      .value { margin-top:13px; }
+      .history-list { grid-template-columns:repeat(2,1fr); }
+      .hero { padding:22px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="brand">
+        <img src="./logo-football-stats.png" alt="Logo Football Stats">
+        <div><h1>FOOTBALL STATS</h1><div class="subtitle">MEDIDOR DE FUERZA DE REMATE</div></div>
+      </div>
+      <div class="connection"><span id="dot" class="dot"></span><span id="connectionText">Conectando con Firebase…</span><button id="installButton" class="install">Instalar app</button></div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Lectura en vivo</div>
+      <div class="live-row"><div class="live" id="liveValue">0.00</div><div class="unit" id="unit">kg</div></div>
+      <div class="status" id="state">CONECTANDO</div>
+      <div class="meter"><span id="meterFill"></span></div>
+      <p class="hint" id="liveHint">Este valor muestra el campo “lectura” enviado por el ESP8266. No se reemplaza por el pico del remate.</p>
+    </section>
+
+    <section class="cards">
+      <article class="card"><div class="eyebrow">Último remate</div><div class="value"><span id="lastShot">0.00</span> <small id="unit2">kg</small></div></article>
+      <article class="card"><div class="eyebrow">Récord de sesión</div><div class="value"><span id="record">0.00</span> <small id="unit3">kg</small></div></article>
+      <article class="card"><div class="eyebrow">Remates registrados</div><div class="value"><span id="count">0</span></div></article>
+    </section>
+
+    <section class="history">
+      <div class="eyebrow">Últimos remates vistos</div>
+      <div id="historyList" class="history-list"><div class="empty">Todavía no hay remates en esta sesión.</div></div>
+      <p class="hint">El historial de esta lista se conserva mientras esta pestaña/app permanezca abierta. Los valores principales vienen de Firebase.</p>
+    </section>
+    <div class="footer">FOOTBALL STATS · Proyecto tecnológico · 2026</div>
+  </main>
+
+<script>
+  // Firebase Realtime Database: se conserva la ruta usada por el ESP8266.
+  const FIREBASE_URL = "https://medidor-de-fuerza-2026-default-rtdb.firebaseio.com/medidor.json";
+  const $ = (id) => document.getElementById(id);
+  let previousShotCount = null;
+  let history = [];
+  let lastSuccessfulRead = 0;
+
+  function numberValue(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  function format(value) { return numberValue(value).toFixed(2); }
+  function setConnection(online, message) {
+    $("dot").className = "dot " + (online ? "online" : "offline");
+    $("connectionText").textContent = message;
+  }
+  function renderHistory() {
+    const target = $("historyList");
+    if (!history.length) {
+      target.innerHTML = '<div class="empty">Todavía no hay remates en esta sesión.</div>';
+      return;
+    }
+    target.innerHTML = history.map((item, i) =>
+      `<div class="shot"><b>${format(item)}</b><span>Remate ${history.length - i}</span></div>`
+    ).join("");
+  }
+
+  async function updateDashboard() {
+    try {
+      const response = await fetch(FIREBASE_URL + "?_=" + Date.now(), {
+        method: "GET", cache: "no-store"
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      if (!data || typeof data !== "object") throw new Error("No hay datos en /medidor");
+
+      // IMPORTANTE: lectura en vivo usa SOLAMENTE data.lectura.
+      // No usar picoActual como reemplazo: ese campo es el máximo del golpe.
+      const liveReading = numberValue(data.lectura, 0);
+      const last = numberValue(data.ultimoPico, 0);
+      const best = numberValue(data.recordSesion, 0);
+      const count = Math.max(0, Math.floor(numberValue(data.numeroGolpe, 0)));
+      const unit = (typeof data.unidad === "string" && data.unidad.toLowerCase().includes("kg")) ? "kg" : "kg";
+
+      $("liveValue").textContent = format(liveReading);
+      $("lastShot").textContent = format(last);
+      $("record").textContent = format(best);
+      $("count").textContent = String(count);
+      $("unit").textContent = unit;
+      $("unit2").textContent = unit;
+      $("unit3").textContent = unit;
+      $("state").textContent = String(data.estado || "CONECTADO").toUpperCase();
+
+      // Barra visual orientativa, limitada para evitar desbordes.
+      $("meterFill").style.width = Math.min(100, Math.max(0, Math.abs(liveReading) * 10)) + "%";
+
+      if (previousShotCount !== null && count > previousShotCount) {
+        history.unshift(last);
+        history = history.slice(0, 10);
+        renderHistory();
+      }
+      previousShotCount = count;
+      lastSuccessfulRead = Date.now();
+      setConnection(true, "Firebase conectado");
+    } catch (error) {
+      setConnection(false, "Sin conexión con Firebase");
+      $("state").textContent = "SIN CONEXIÓN";
+      $("liveHint").textContent = "No se pudieron actualizar los datos. Revisá Internet, la URL y los permisos de lectura de Firebase.";
+    }
+  }
+
+  updateDashboard();
+  setInterval(updateDashboard, 700);
+
+  // Instalación Android (Chrome/Edge): aparece cuando el navegador ofrece instalar.
+  let installPrompt = null;
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    installPrompt = event;
+    $("installButton").classList.add("show");
+  });
+  $("installButton").addEventListener("click", async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    await installPrompt.userChoice;
+    installPrompt = null;
+    $("installButton").classList.remove("show");
+  });
+  window.addEventListener("appinstalled", () => {
+    $("installButton").classList.remove("show");
+  });
+
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(console.error));
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+FOOTBALL STATS — PWA PARA ANDROID
+
+CONTENIDO
+- index.html: aplicación y conexión con Firebase.
+- manifest.webmanifest: identidad instalable de la app.
+- sw.js: caché de la interfaz para abrirla sin conexión.
+- logo-football-stats.png e icons/: logo e íconos.
+
+DATOS DE FIREBASE
+La aplicación consulta:
+https://medidor-de-fuerza-2026-default-rtdb.firebaseio.com/medidor.json
+
+Campos que espera:
+lectura, ultimoPico, recordSesion, numeroGolpe y estado.
+IMPORTANTE: "Lectura en vivo" muestra exclusivamente el campo "lectura".
+No usa picoActual como sustituto, porque picoActual representa el pico del golpe.
+
+PUBLICAR PARA INSTALAR EN ANDROID
+1. Subí TODOS los archivos y carpetas de este ZIP a un repositorio de GitHub.
+2. En GitHub: Settings > Pages > Deploy from a branch > main > /(root) > Save.
+3. Esperá que GitHub Pages publique el sitio. La dirección será HTTPS.
+4. Abrí esa dirección en Chrome en Android.
+5. Elegí "Instalar app" si aparece el botón, o menú ⋮ > Instalar aplicación / Agregar a pantalla principal.
+
+PRUEBA LOCAL
+Para probar PWA, abrí el sitio desde un servidor local (por ejemplo VS Code Live Server).
+El service worker no funciona correctamente abriendo index.html directamente como archivo.
+
+IMPORTANTE SOBRE FIREBASE
+La base debe permitir lectura desde el navegador para esta ruta, o la app mostrará "Sin conexión".
+No publiques credenciales privadas ni dejes reglas de lectura/escritura abiertas permanentemente.
+El ESP8266 debe seguir escribiendo en /medidor.json con los mismos nombres de campos.
